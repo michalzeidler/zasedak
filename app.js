@@ -110,7 +110,7 @@ function renderStudentList() {
   const sorted = [...state.activeClass.students].sort((a,b) => a.name.localeCompare(b.name, 'cs'));
   $('#student-list').innerHTML = sorted.length ? sorted.map(s => {
     const hasSeat = s.seatIndex !== null && s.seatIndex !== undefined;
-    return `<button class="student-row ${hasSeat ? 'seated' : ''} ${state.selectedId === s.id ? 'chosen' : ''}" data-id="${s.id}" draggable="true"><span class="student-avatar" style="--student-color:${palette[s.id.charCodeAt(0) % palette.length]}">${esc(s.name.trim()[0]?.toUpperCase() || '?')}</span><span class="student-row-name">${esc(s.name)}</span><span class="student-row-state">${hasSeat ? 'Usazeno' : 'Volné'}</span></button>`;
+    return `<button class="student-row ${hasSeat ? 'seated' : ''} ${state.selectedId === s.id ? 'chosen' : ''}" data-id="${s.id}" draggable="true"><span class="student-avatar" style="--student-color:${palette[s.id.charCodeAt(0) % palette.length]}">${esc(s.name.trim()[0]?.toUpperCase() || '?')}</span><span class="student-row-name">${esc(s.name)}</span><span class="student-row-state">${hasSeat ? 'Usazeno' : 'Volný'}</span></button>`;
   }).join('') : '<div class="empty-roster">Zatím tu nikdo není.<br>Jména přidejte výše.</div>';
   $('#student-list').querySelectorAll('.student-row').forEach(row => {
     row.addEventListener('click', () => { state.selectedId = state.selectedId === row.dataset.id ? null : row.dataset.id; render(); });
@@ -187,7 +187,18 @@ $('#delete-class').addEventListener('click', async () => {
   localStorage.removeItem('zasedak.activeClass'); try { await loadClasses(); await loadClass(state.classes[0].id); toast('Třída byla smazána.'); } catch(e) { toast(errorMessage(e),true); }
 });
 
+const confirmationParams = new URLSearchParams(window.location.search);
+const hasConfirmationHash = window.location.hash.includes('type=email_confirmation') || window.location.hash.includes('type=signup');
+
 supabase.auth.getSession().then(({data,error}) => {
   if (error) { $('#auth-message').textContent = error.message; return; }
-  if (data.session) showApp(data.session.user);
+  if (data.session) {
+    showApp(data.session.user);
+  } else if (confirmationParams.has('confirmation') || hasConfirmationHash) {
+    $('#auth-message').textContent = 'E-mail byl potvrzen. Účet byl úspěšně vytvořen — nyní se můžete přihlásit.';
+  }
+
+  if (hasConfirmationHash || confirmationParams.has('confirmation')) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 });
