@@ -11,8 +11,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS classes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    rows INTEGER NOT NULL DEFAULT 4,
-    desks_per_row INTEGER NOT NULL DEFAULT 5,
+    rows INTEGER NOT NULL DEFAULT 5,
+    desks_per_row INTEGER NOT NULL DEFAULT 3,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
   CREATE TABLE IF NOT EXISTS students (
@@ -24,7 +24,7 @@ db.exec(`
   );
 `);
 if (db.prepare('SELECT COUNT(*) AS count FROM classes').get().count === 0) {
-  db.prepare('INSERT INTO classes (name) VALUES (?)').run('Moje třída');
+  db.prepare('INSERT INTO classes (name, rows, desks_per_row) VALUES (?, ?, ?)').run('Moje třída', 5, 3);
 }
 
 app.use(express.json({ limit: '100kb' }));
@@ -43,7 +43,7 @@ app.get('/api/classes', (_req, res) => {
 
 app.post('/api/classes', (req, res) => {
   const name = String(req.body.name || '').trim().slice(0, 80) || 'Nová třída';
-  const result = db.prepare('INSERT INTO classes (name) VALUES (?)').run(name);
+  const result = db.prepare('INSERT INTO classes (name, rows, desks_per_row) VALUES (?, ?, ?)').run(name, 5, 3);
   res.status(201).json({ ...getClass.get(result.lastInsertRowid), students: [] });
 });
 
