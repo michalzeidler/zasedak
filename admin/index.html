@@ -18,7 +18,7 @@
     <section class="admin-intro">
       <div class="eyebrow">SPRÁVA APLIKACE</div>
       <h1>Administrace</h1>
-      <p>Správa účtů učitelů, rolí a tříd. Hesla se mění bezpečným odkazem zaslaným uživateli e-mailem.</p>
+      <p>Správa účtů učitelů, rolí, tříd a zasedacího pořádku.</p>
     </section>
     <p id="status" class="admin-status" role="status" aria-live="polite">Ověřuji přístup…</p>
     <section id="admin-content" hidden>
@@ -42,6 +42,22 @@
         <div class="table-scroll"><table><thead><tr><th>Název</th><th>Vlastník</th><th>Rozložení</th><th>Vytvořeno</th><th>Akce</th></tr></thead><tbody id="classes-body"></tbody></table></div>
       </section>
     </section>
+    <dialog id="class-dialog" class="class-dialog">
+      <form method="dialog" class="dialog-shell">
+        <div class="dialog-header"><div><div class="eyebrow">NÁHLED TŘÍDY</div><h2 id="dialog-title">Třída</h2></div><button class="icon-button" value="close" aria-label="Zavřít">×</button></div>
+        <div class="class-editor">
+          <label>Název třídy<input id="edit-class-name" type="text" maxlength="80"></label>
+          <label>Řady<select id="edit-class-rows"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+          <label>Lavice v řadě<select id="edit-class-desks"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+        </div>
+        <div class="class-preview">
+          <div class="preview-head"><h3>Lavice a žáci</h3><p id="preview-summary"></p></div>
+          <div id="seat-preview" class="seat-preview"></div>
+        </div>
+        <label class="roster-editor">Seznam žáků<textarea id="edit-students" rows="8" placeholder="Jedno jméno na řádek"></textarea></label>
+        <div class="dialog-actions"><button type="button" id="save-class-editor" class="button button-primary" value="">Uložit změny</button><button class="button button-soft" value="close">Zavřít</button></div>
+      </form>
+    </dialog>
     <p id="toast" class="toast" role="status" aria-live="polite"></p>
   </main>
 </body>
