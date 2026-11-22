@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f3">
+  <title>Zasedák — zasedací pořádek</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main id="auth-view" class="auth-wrap">
+    <section class="auth-card">
+      <a class="brand auth-brand" href="./"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a>
+      <div class="eyebrow">VÁŠ TŘÍDNÍ PLÁN</div>
+      <h1 id="auth-title">Přihlášení</h1>
+      <p class="auth-intro">Přihlaste se a mějte své třídy bezpečně po ruce na každém počítači.</p>
+      <form id="auth-form">
+        <label for="email">E-mail</label><input id="email" type="email" autocomplete="email" required placeholder="ucitel@skola.cz">
+        <label for="password">Heslo</label><input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Alespoň 8 znaků">
+        <button id="auth-submit" class="button primary" type="submit">Přihlásit se</button>
+      </form>
+      <p class="auth-switch"><span id="auth-switch-text">Ještě nemáte účet?</span> <button id="auth-toggle" type="button">Vytvořit účet</button></p>
+      <p class="privacy-note">Vaše třídy jsou soukromé a přístupné pouze po přihlášení k vašemu účtu.</p>
+      <p id="auth-message" class="message" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <div id="app-view" class="app-shell" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="./"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a>
+      <div class="side-label">MOJE TŘÍDY</div>
+      <div id="class-list" class="class-list" aria-label="Seznam tříd"></div>
+      <button id="add-class" class="add-class">＋ Přidat třídu</button>
+      <div class="sidebar-note">Každá třída a její zasedací pořádek se ukládají do vašeho soukromého účtu.</div>
+      <button id="sign-out" class="sign-out">Odhlásit se</button>
+    </aside>
+    <main class="main-content">
+      <header class="topbar"><div class="breadcrumb">MOJE TŘÍDY <span>/</span> <strong id="breadcrumb-name">—</strong></div><div class="topbar-right"><span id="save-status" class="save-status"><i></i> Uloženo</span><span id="user-email" class="user-email"></span></div></header>
+      <section class="page-heading"><div><div class="eyebrow">✳ TŘÍDNÍ PLÁN</div><h1 id="page-title">Načítám…</h1><p>Poskládejte si třídu přesně podle sebe. Děti stačí přetáhnout na místo.</p></div><div class="heading-actions"><button id="randomize" class="button soft">⤨ Náhodně rozmístit</button><button id="clear-seats" class="button outline">↺ Uvolnit místa</button></div></section>
+      <section class="stats-row"><div class="stat-card"><span class="stat-icon lilac">♙</span><div><strong id="student-count">0</strong><span>žáků celkem</span></div></div><div class="stat-card"><span class="stat-icon mint">▤</span><div><strong id="seat-count">0</strong><span>volných míst</span></div></div><div class="stat-card"><span class="stat-icon peach">✳</span><div><strong id="assigned-count">0</strong><span>žáků usazeno</span></div></div><label class="class-edit">Název třídy<input id="class-name" maxlength="80"></label></section>
+      <div class="workspace">
+        <section class="room-card"><div class="room-toolbar"><div><h2>Rozložení třídy</h2><p>Klepněte na žáka a pak na místo, nebo ho přetáhněte.</p></div><div class="grid-controls"><span>Lavice v řadě</span><button id="less-desks" aria-label="Méně lavic">−</button><b id="desk-number">5</b><button id="more-desks" aria-label="Více lavic">＋</button></div></div><div class="room-scroll"><div class="classroom"><div class="board">✦ &nbsp; TABULE &nbsp; ✦</div><div id="desk-grid" class="desk-grid"></div></div></div><div class="room-legend"><span><i class="legend-occupied"></i> Obsazené místo</span><span><i class="legend-empty"></i> Volné místo</span><span class="room-hint">PŘEDNÍ ČÁST TŘÍDY ↑</span></div></section>
+        <aside class="roster-card"><div class="roster-heading"><div><h2>Seznam žáků</h2><p id="roster-subtitle">Přidejte děti do třídy</p></div><span class="roster-count" id="roster-count">0</span></div><label class="input-label" for="student-names">Jména (každé na nový řádek)</label><textarea id="student-names" placeholder="Anna Nováková&#10;Jakub Dvořák&#10;Eliška Svobodová"></textarea><button id="save-roster" class="button primary save-roster">Uložit seznam žáků <span>→</span></button><div class="roster-divider">ŽÁCI VE TŘÍDĚ</div><div id="student-list" class="student-list"></div><div class="roster-tip">☝ Vyberte jméno a potom klepněte na místo.</div><button id="delete-class" class="delete-class">Smazat tuto třídu</button></aside>
+      </div>
+      <footer class="page-footer">Vytvořeno s péčí o každou třídu <b>♥</b></footer>
+      <p id="toast" class="toast" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+</body>
+</html>
