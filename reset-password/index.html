@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Změna hesla — Zasedák</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./reset.css">
+  <script type="module" src="./reset.js"></script>
+</head>
+<body>
+  <main class="auth-wrap"><section class="auth-card">
+    <a class="brand auth-brand" href="../"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>ZABEZPEČENÍ ÚČTU</small></span></a>
+    <h1>Změna hesla</h1><p class="auth-intro">Zadejte nové heslo k účtu.</p>
+    <form id="reset-form" hidden><label for="new-password">Nové heslo</label><input id="new-password" type="password" minlength="8" autocomplete="new-password" required><button id="save-password" class="button button-primary" type="submit">Uložit nové heslo</button></form>
+    <p id="reset-message" class="message" role="status" aria-live="polite">Ověřuji odkaz…</p>
+  </section></main>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f3">
+  <title>Administrace — Zasedák</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./admin.css">
+  <script type="module" src="./admin.js"></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <a class="brand" href="../"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>ADMINISTRACE</small></span></a>
+      <div class="admin-header-actions"><span id="admin-email" class="muted"></span><a class="button button-soft" href="../">Zpět do aplikace</a><button id="sign-out" class="button button-outline">Odhlásit</button></div>
+    </header>
+    <section class="admin-intro">
+      <div class="eyebrow">SPRÁVA APLIKACE</div>
+      <h1>Administrace</h1>
+      <p>Správa účtů učitelů, rolí a tříd. Hesla se mění bezpečným odkazem zaslaným uživateli e-mailem.</p>
+    </section>
+    <p id="status" class="admin-status" role="status" aria-live="polite">Ověřuji přístup…</p>
+    <section id="admin-content" hidden>
+      <div class="admin-actions card">
+        <div><h2>Pozvat uživatele</h2><p>Nový uživatel dostane e-mailem odkaz k dokončení registrace.</p></div>
+        <form id="invite-form" class="invite-form">
+          <label class="sr-only" for="invite-email">E-mail uživatele</label>
+          <input id="invite-email" type="email" required placeholder="ucitel@skola.cz">
+          <label class="sr-only" for="invite-role">Role</label>
+          <select id="invite-role"><option value="teacher">Učitel</option><option value="admin">Administrátor</option></select>
+          <button class="button button-primary" type="submit">Odeslat pozvánku</button>
+        </form>
+      </div>
+      <div class="admin-stats" id="admin-stats"></div>
+      <section class="card table-card">
+        <div class="section-title"><div><h2>Uživatelé</h2><p id="user-summary">Načítám…</p></div><button id="refresh" class="button button-soft">Obnovit</button></div>
+        <div class="table-scroll"><table><thead><tr><th>E-mail</th><th>Role</th><th>Registrace</th><th>Akce</th></tr></thead><tbody id="users-body"></tbody></table></div>
+      </section>
+      <section class="card table-card">
+        <div class="section-title"><div><h2>Třídy</h2><p>Všechny třídy v systému</p></div></div>
+        <div class="table-scroll"><table><thead><tr><th>Název</th><th>Vlastník</th><th>Rozložení</th><th>Vytvořeno</th><th>Akce</th></tr></thead><tbody id="classes-body"></tbody></table></div>
+      </section>
+    </section>
+    <p id="toast" class="toast" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>
