@@ -23,7 +23,7 @@ $('#auth-toggle').addEventListener('click', () => {
   $('#auth-message').textContent = '';
 });
 $('#auth-form').addEventListener('submit', async event => {
-  event.preventEvent(); const email = $('#email').value.trim(); const password = $('#password').value;
+  event.preventDefault(); const email = $('#email').value.trim(); const password = $('#password').value;
   $('#auth-submit').disabled = true; $('#auth-message').textContent = state.isSignUp ? 'Vytvářím účet…' : 'Přihlašuji…';
   try {
     const result = state.isSignUp ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
@@ -73,7 +73,11 @@ function render() {
   $('#page-title').textContent = room.name; $('#breadcrumb-name').textContent = room.name; $('#class-name').value = room.name;
   $('#student-count').textContent = room.students.length; $('#seat-count').textContent = Math.max(0, capacity() - inSeats.length); $('#assigned-count').textContent = inSeats.length;
   $('#roster-count').textContent = room.students.length; $('#roster-subtitle').textContent = room.students.length ? `${inSeats.length} z ${room.students.length} usazeno` : 'Přidejte děti do třídy';
-  $('#desk-number').textContent = room.desksPerRow; $('#row-number').textContent = room.rows;
+  $('#desk-number').textContent = room.desksPerRow;
+  $('#row-number').textContent = room.rows;
+  const lessRows = $('#less-rows'); const moreRows = $('#more-rows');
+  if (lessRows) lessRows.disabled = room.rows <= 1;
+  if (moreRows) moreRows.disabled = room.rows >= 8;
   renderClasses(); renderSeats(); renderStudentList();
 }
 function renderClasses() {
@@ -150,7 +154,19 @@ async function updateRoom(changes) {
   const payload = { name:state.activeClass.name, rows:state.activeClass.rows, desks_per_row:state.activeClass.desksPerRow, ...changes };
   const { error } = await supabase.from('classes').update(payload).eq('id', state.activeClass.id);
   if (error) { setSaving(false); return toast(errorMessage(error), true); }
-  try { await loadClass(state.activeClass.id); await loadClasses(); setSaving(false); } catch (e) { setSaving(false); toast(errorMessage(e), true); }
+  try {
+    const nextRows = changes.rows ?? state.activeClass.rows;
+    const nextDesks = changes.desks_per_row ?? state.activeClass.desksPerRow;
+    const limit = nextRows * nextDesks * 2;
+    const outOfBounds = state.activeClass.students.filter(s => s.seatIndex !== null && s.seatIndex !== undefined && s.seatIndex >= limit);
+    if (outOfBounds.length) {
+      for (const student of outOfBounds) {
+        const { error: seatError } = await supabase.from('students').update({ seat_index:null }).eq('id', student.id);
+        if (seatError) throw seatError;
+      }
+    }
+    await loadClass(state.activeClass.id); await loadClasses(); setSaving(false);
+  } catch (e) { setSaving(false); toast(errorMessage(e), true); }
 }
 $('#class-name').addEventListener('change', () => updateRoom({ name:$('#class-name').value.trim() || 'Nová třída' }));
 $('#less-desks').addEventListener('click', () => { if (state.activeClass.desksPerRow > 1) updateRoom({ desks_per_row:state.activeClass.desksPerRow - 1 }); });

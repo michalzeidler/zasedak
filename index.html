@@ -9,14 +9,9 @@
   <script type="module" src="./app.js"></script>
 </head>
 <body>
-  <main id="auth-view" class="auth-wrap">
-    <section class="auth-card"><a class="brand auth-brand" href="./"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a><div class="eyebrow">VÁŠ TŘÍDNÍ PLÁN</div><h1 id="auth-title">Přihlášení</h1><p class="auth-intro">Přihlaste se a mějte své třídy bezpečně po ruce na každém počítači.</p><form id="auth-form"><label for="email">E-mail</label><input id="email" type="email" autocomplete="email" required><label for="password">Heslo</label><input id="password" type="password" autocomplete="current-password" minlength="8" required><button id="auth-submit" class="button primary" type="submit">Přihlásit se</button></form><p class="auth-switch"><span id="auth-switch-text">Ještě nemáte účet?</span> <button id="auth-toggle" type="button">Vytvořit účet</button></p><p id="auth-message" class="message"></p></section>
-  </main>
+  <main id="auth-view" class="auth-wrap"><section class="auth-card"><a class="brand auth-brand" href="./"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a><div class="eyebrow">VÁŠ TŘÍDNÍ PLÁN</div><h1 id="auth-title">Přihlášení</h1><p class="auth-intro">Přihlaste se a mějte své třídy bezpečně po ruce na každém počítači.</p><form id="auth-form"><label for="email">E-mail</label><input id="email" type="email" autocomplete="email" required><label for="password">Heslo</label><input id="password" type="password" autocomplete="current-password" minlength="8" required><button id="auth-submit" class="button primary" type="submit">Přihlásit se</button></form><p class="auth-switch"><span id="auth-switch-text">Ještě nemáte účet?</span> <button id="auth-toggle" type="button">Vytvořit účet</button></p><p id="auth-message" class="message"></p></section></main>
   <div id="app-view" class="app-shell" hidden>
-    <aside class="sidebar">
-      <a class="brand" href="./"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a>
-      <div class="side-label">MOJE TŘÍDY</div><div id="class-list" class="class-list"></div><button id="add-class" class="add-class">＋ Přidat třídu</button><div class="sidebar-note">Každá třída a její zasedací pořádek se ukládají do vašeho soukromého účtu.</div><button id="sign-out" class="sign-out">Odhlásit se</button>
-    </aside>
+    <aside class="sidebar"><a class="brand" href="./"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a><div class="side-label">MOJE TŘÍDY</div><div id="class-list" class="class-list"></div><button id="add-class" class="add-class">＋ Přidat třídu</button><div class="sidebar-note">Každá třída a její zasedací pořádek se ukládají do vašeho soukromého účtu.</div><button id="sign-out" class="sign-out">Odhlásit se</button></aside>
     <main class="main-content">
       <header class="topbar"><div class="breadcrumb">MOJE TŘÍDY <span>/</span> <strong id="breadcrumb-name">—</strong></div><div class="topbar-right"><span id="save-status" class="save-status"><i></i> Uloženo</span><span id="user-email" class="user-email"></span></div></header>
       <section class="page-heading"><div><div class="eyebrow">✳ TŘÍDNÍ PLÁN</div><h1 id="page-title">Načítám…</h1><p>Poskládejte si třídu přesně podle sebe. Děti stačí přetáhnout na místo.</p></div><div class="heading-actions"><button id="randomize" class="button soft">↝ Náhodně rozmístit</button><button id="clear-seats" class="button outline">↺ Uvolnit místa</button></div></section>
@@ -25,8 +20,8 @@
         <section class="room-card">
           <div class="room-toolbar"><div><h2>Rozložení třídy</h2><p>Klepněte na žáka a pak na místo, nebo ho přetáhněte.</p></div>
             <div class="grid-controls">
-              <span>Lavice v řadě</span><button id="less-desks" aria-label="Méně lavic">−</button><b id="desk-number">3</b><button id="more-desks" aria-label="Více lavic">＋</button>
-              <span class="row-control-label">Řady</span><button id="less-rows" aria-label="Méně řad">−</button><b id="row-number">5</b><button id="more-rows" aria-label="Více řad">＋</button>
+              <span>Lavice v řadě</span><button type="button" id="less-desks" aria-label="Méně lavic">−</button><b id="desk-number">3</b><button type="button" id="more-desks" aria-label="Více lavic">＋</button>
+              <span class="row-control-label">Řady</span><button type="button" id="less-rows" aria-label="Méně řad">−</button><b id="row-number">5</b><button type="button" id="more-rows" aria-label="Více řad">＋</button>
             </div>
           </div>
           <div class="room-scroll"><div class="classroom"><div class="board">▧ &nbsp; TABULE &nbsp; ▧</div><div id="desk-grid" class="desk-grid"></div></div></div>
