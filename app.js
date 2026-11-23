@@ -23,17 +23,13 @@ $('#auth-toggle').addEventListener('click', () => {
   $('#auth-message').textContent = '';
 });
 $('#auth-form').addEventListener('submit', async event => {
-  event.preventDefault(); const email = $('#email').value.trim(); const password = $('#password').value;
+  event.preventEvent(); const email = $('#email').value.trim(); const password = $('#password').value;
   $('#auth-submit').disabled = true; $('#auth-message').textContent = state.isSignUp ? 'Vytvářím účet…' : 'Přihlašuji…';
   try {
     const result = state.isSignUp ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
     if (result.error) throw result.error;
-    if (state.isSignUp && !result.data.session) {
-      $('#auth-message').textContent = 'Účet je vytvořený. Potvrďte registraci odkazem v e-mailu a potom se přihlaste.';
-      return;
-    }
-    $('#auth-message').textContent = '';
-    if (result.data.session) await showApp(result.data.user);
+    if (state.isSignUp && !result.data.session) { $('#auth-message').textContent = 'Účet je vytvořený. Potvrďte registraci odkazem v e-mailu a potom se přihlaste.'; return; }
+    $('#auth-message').textContent = ''; if (result.data.session) await showApp(result.data.user);
   } catch (error) { $('#auth-message').textContent = errorMessage(error); }
   finally { $('#auth-submit').disabled = false; }
 });
@@ -48,7 +44,7 @@ async function showApp(user) {
   try {
     await loadClasses();
     if (!state.classes.length) {
-      const { data, error } = await supabase.from('classes').insert({ name: 'Moje třída', rows: 4, desks_per_row: 5 }).select().single();
+      const { data, error } = await supabase.from('classes').insert({ name: 'Moje třída', rows: 5, desks_per_row: 3 }).select().single();
       if (error) throw error;
       await loadClasses(); await loadClass(data.id);
     } else {
@@ -76,7 +72,8 @@ function render() {
   const room = state.activeClass, inSeats = seated();
   $('#page-title').textContent = room.name; $('#breadcrumb-name').textContent = room.name; $('#class-name').value = room.name;
   $('#student-count').textContent = room.students.length; $('#seat-count').textContent = Math.max(0, capacity() - inSeats.length); $('#assigned-count').textContent = inSeats.length;
-  $('#roster-count').textContent = room.students.length; $('#roster-subtitle').textContent = room.students.length ? `${inSeats.length} z ${room.students.length} usazeno` : 'Přidejte děti do třídy'; $('#desk-number').textContent = room.desksPerRow;
+  $('#roster-count').textContent = room.students.length; $('#roster-subtitle').textContent = room.students.length ? `${inSeats.length} z ${room.students.length} usazeno` : 'Přidejte děti do třídy';
+  $('#desk-number').textContent = room.desksPerRow; $('#row-number').textContent = room.rows;
   renderClasses(); renderSeats(); renderStudentList();
 }
 function renderClasses() {
@@ -118,10 +115,7 @@ function renderStudentList() {
     row.addEventListener('dragover', e => e.preventDefault()); row.addEventListener('drop', e => { e.preventDefault(); moveStudent(e.dataTransfer.getData('text/plain'), null); });
   });
 }
-async function saveSeats() {
-  const { error } = await supabase.from('students').upsert(state.activeClass.students.map(s => ({ id:s.id, class_id:state.activeClass.id, name:s.name, seat_index:s.seatIndex, sort_order:s.sortOrder || 0 })));
-  if (error) throw error;
-}
+async function saveSeats() { const { error } = await supabase.from('students').upsert(state.activeClass.students.map(s => ({ id:s.id, class_id:state.activeClass.id, name:s.name, seat_index:s.seatIndex, sort_order:s.sortOrder || 0 }))); if (error) throw error; }
 async function moveStudent(studentId, seatIndex) {
   const student = state.activeClass.students.find(s => s.id === studentId); if (!student) return;
   const before = state.activeClass.students.map(s => ({ id:s.id, seatIndex:s.seatIndex }));
@@ -134,7 +128,7 @@ async function moveStudent(studentId, seatIndex) {
 }
 $('#add-class').addEventListener('click', async () => {
   const name = prompt('Název nové třídy:', `Třída ${state.classes.length + 1}`); if (!name?.trim()) return;
-  const { data, error } = await supabase.from('classes').insert({ name:name.trim().slice(0,80), rows:4, desks_per_row:5 }).select('id').single();
+  const { data, error } = await supabase.from('classes').insert({ name:name.trim().slice(0,80), rows:5, desks_per_row:3 }).select('id').single();
   if (error) return toast(errorMessage(error), true);
   try { await loadClasses(); await loadClass(data.id); toast('Nová třída je připravená.'); } catch (e) { toast(errorMessage(e), true); }
 });
@@ -143,14 +137,9 @@ $('#save-roster').addEventListener('click', async () => {
   if (names.length > 100) return toast('Do jedné třídy lze přidat nejvýše 100 žáků.', true);
   setSaving(true);
   try {
-    const existing = new Map();
-    state.activeClass.students.forEach(s => { const key = s.name.toLocaleLowerCase('cs'); if (!existing.has(key)) existing.set(key, []); existing.get(key).push(s); });
+    const existing = new Map(); state.activeClass.students.forEach(s => { const key = s.name.toLocaleLowerCase('cs'); if (!existing.has(key)) existing.set(key, []); existing.get(key).push(s); });
     const kept = [];
-    for (let i=0; i<names.length; i++) {
-      const name = names[i], old = existing.get(name.toLocaleLowerCase('cs'))?.shift();
-      if (old) { const { error } = await supabase.from('students').update({ name, sort_order:i }).eq('id', old.id); if (error) throw error; kept.push(old.id); }
-      else { const { data, error } = await supabase.from('students').insert({ class_id:state.activeClass.id, name, sort_order:i }).select('id').single(); if (error) throw error; kept.push(data.id); }
-    }
+    for (let i=0; i<names.length; i++) { const name = names[i], old = existing.get(name.toLocaleLowerCase('cs'))?.shift(); if (old) { const { error } = await supabase.from('students').update({ name, sort_order:i }).eq('id', old.id); if (error) throw error; kept.push(old.id); } else { const { data, error } = await supabase.from('students').insert({ class_id:state.activeClass.id, name, sort_order:i }).select('id').single(); if (error) throw error; kept.push(data.id); } }
     const removeIds = state.activeClass.students.map(s => s.id).filter(id => !kept.includes(id));
     if (removeIds.length) { const { error } = await supabase.from('students').delete().in('id', removeIds); if (error) throw error; }
     await loadClass(state.activeClass.id); await loadClasses(); setSaving(false); toast('Seznam žáků byl uložen.');
@@ -166,6 +155,8 @@ async function updateRoom(changes) {
 $('#class-name').addEventListener('change', () => updateRoom({ name:$('#class-name').value.trim() || 'Nová třída' }));
 $('#less-desks').addEventListener('click', () => { if (state.activeClass.desksPerRow > 1) updateRoom({ desks_per_row:state.activeClass.desksPerRow - 1 }); });
 $('#more-desks').addEventListener('click', () => { if (state.activeClass.desksPerRow < 8) updateRoom({ desks_per_row:state.activeClass.desksPerRow + 1 }); });
+$('#less-rows').addEventListener('click', () => { if (state.activeClass.rows > 1) updateRoom({ rows:state.activeClass.rows - 1 }); });
+$('#more-rows').addEventListener('click', () => { if (state.activeClass.rows < 8) updateRoom({ rows:state.activeClass.rows + 1 }); });
 $('#randomize').addEventListener('click', async () => {
   const students = state.activeClass.students; if (students.length > capacity()) return toast('Ve třídě není dost míst pro všechny žáky.', true);
   const previous = students.map(s => ({ id:s.id, seatIndex:s.seatIndex }));
@@ -189,16 +180,9 @@ $('#delete-class').addEventListener('click', async () => {
 
 const confirmationParams = new URLSearchParams(window.location.search);
 const hasConfirmationHash = window.location.hash.includes('type=email_confirmation') || window.location.hash.includes('type=signup');
-
 supabase.auth.getSession().then(({data,error}) => {
   if (error) { $('#auth-message').textContent = error.message; return; }
-  if (data.session) {
-    showApp(data.session.user);
-  } else if (confirmationParams.has('confirmation') || hasConfirmationHash) {
-    $('#auth-message').textContent = 'E-mail byl potvrzen. Účet byl úspěšně vytvořen — nyní se můžete přihlásit.';
-  }
-
-  if (hasConfirmationHash || confirmationParams.has('confirmation')) {
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
+  if (data.session) showApp(data.session.user);
+  else if (confirmationParams.has('confirmation') || hasConfirmationHash) $('#auth-message').textContent = 'E-mail byl potvrzen. Účet byl úspěšně vytvořen — nyní se můžete přihlásit.';
+  if (hasConfirmationHash || confirmationParams.has('confirmation')) window.history.replaceState({}, document.title, window.location.pathname);
 });
