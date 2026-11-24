@@ -7,8 +7,8 @@ const supabase = createClient(
 const classList = document.querySelector('#class-list');
 
 function addDeleteButtons() {
-  const classes = [...classList.querySelectorAll('.class-item')];
-  for (const item of classes) {
+  if (!classList) return;
+  for (const item of classList.querySelectorAll('.class-item')) {
     if (item.parentElement.classList.contains('class-item-row')) continue;
     const row = document.createElement('div');
     row.className = 'class-item-row';
@@ -23,7 +23,7 @@ function addDeleteButtons() {
     row.append(remove);
     remove.addEventListener('click', async event => {
       event.stopPropagation();
-      if (classes.length <= 1) {
+      if (classList.querySelectorAll('.class-item').length <= 1) {
         window.alert('Poslední třídu nelze smazat.');
         return;
       }
@@ -96,15 +96,20 @@ function addAccountMenu() {
   panel.id = 'user-menu-panel';
   panel.setAttribute('aria-label', 'Uživatelské menu');
   panel.hidden = true;
-  panel.innerHTML = '<button type="button" class="user-menu-action" data-open-account>Můj účet</button><a class="user-menu-link" href="#student-names">Seznam žáků</a><a class="user-menu-link" href="#class-list">Učebny</a><a class="user-menu-link" href="./admin/">Admin</a><span class="user-menu-separator" aria-hidden="true"></span><button type="button" class="user-menu-action user-menu-action-danger" data-sign-out>Odhlásit se</button>';
+  panel.innerHTML = '<button type="button" class="user-menu-action" data-open-account>Můj účet</button><a class="user-menu-link" href="./seznamy/">Seznam žáků</a><a class="user-menu-link" href="./ucebny/">Učebny</a><a class="user-menu-link" href="./admin/" data-admin-link hidden>Admin</a><span class="user-menu-separator" aria-hidden="true"></span><button type="button" class="user-menu-action user-menu-action-danger" data-sign-out>Odhlásit se</button>';
   wrapper.append(trigger, panel);
   topbarRight.append(wrapper);
 
   const dialog = document.createElement('dialog');
   dialog.className = 'account-dialog';
   dialog.setAttribute('aria-labelledby', 'account-dialog-title');
-  dialog.innerHTML = `<form class="account-dialog-content" id="account-form"><h2 id="account-dialog-title">Můj účet</h2><p id="account-email"></p><label for="account-password">Nové heslo</label><input id="account-password" type="password" minlength="8" autocomplete="new-password" required placeholder="Alespoň 8 znaků"><div class="account-dialog-actions"><button type="button" data-close-account>Zavřít</button><button type="submit">Změnit heslo</button></div></form>`;
+  dialog.innerHTML = '<form class="account-dialog-content" id="account-form"><h2 id="account-dialog-title">Můj účet</h2><p id="account-email"></p><label for="account-password">Nové heslo</label><input id="account-password" type="password" minlength="8" autocomplete="new-password" required placeholder="Alespoň 8 znaků"><div class="account-dialog-actions"><button type="button" data-close-account>Zavřít</button><button type="submit">Změnit heslo</button></div></form>';
   document.body.append(dialog);
+
+  const adminLink = panel.querySelector('[data-admin-link]');
+  supabase.from('profiles').select('role').maybeSingle().then(({ data, error }) => {
+    adminLink.hidden = Boolean(error) || data?.role !== 'admin';
+  });
 
   function closeMenu() {
     panel.hidden = true;
@@ -126,15 +131,8 @@ function addAccountMenu() {
     if (event.target.closest('[data-sign-out]')) {
       closeMenu();
       supabase.auth.signOut().then(({ error }) => {
-        if (error) {
-          const toast = document.querySelector('#toast');
-          if (toast) {
-            toast.textContent = error.message;
-            toast.classList.add('error', 'visible');
-          }
-          return;
-        }
-        window.location.reload();
+        if (error) showToast(error.message, true);
+        else window.location.reload();
       });
     }
   });
@@ -152,7 +150,7 @@ function addAccountMenu() {
     if (event.target === dialog) dialog.close();
   });
   dialog.querySelector('#account-form').addEventListener('submit', async event => {
-    event.preventEventDefault();
+    event.preventDefault();
     const submit = dialog.querySelector('[type="submit"]');
     const password = dialog.querySelector('#account-password').value;
     submit.disabled = true;
@@ -161,26 +159,26 @@ function addAccountMenu() {
       if (error) throw error;
       dialog.close();
       dialog.querySelector('#account-form').reset();
-      const toast = document.querySelector('#toast');
-      if (toast) {
-        toast.textContent = 'Heslo bylo změněno.';
-        toast.classList.remove('error');
-        toast.classList.add('visible');
-        window.setTimeout(() => toast.classList.remove('visible'), 2800);
-      }
+      showToast('Heslo bylo změněno.');
     } catch (error) {
-      const toast = document.querySelector('#toast');
-      if (toast) {
-        toast.textContent = error.message || 'Heslo se nepodařilo změnit.';
-        toast.classList.add('error', 'visible');
-        window.setTimeout(() => toast.classList.remove('visible'), 4000);
-      }
+      showToast(error.message || 'Heslo se nepodařilo změnit.', true);
     } finally {
       submit.disabled = false;
     }
   });
 }
 
-new MutationObserver(addDeleteButtons).observe(classList, { childList: true });
-addDeleteButtons();
+function showToast(message, isError = false) {
+  const toast = document.querySelector('#toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.toggle('error', isError);
+  toast.classList.add('visible');
+  window.setTimeout(() => toast.classList.remove('visible'), 3500);
+}
+
+if (classList) {
+  new MutationObserver(addDeleteButtons).observe(classList, { childList: true });
+  addDeleteButtons();
+}
 addAccountMenu();

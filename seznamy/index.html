@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f3">
+  <title>Seznam žáků — Zasedák</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../pages.css">
+  <script type="module" src="../pages.js"></script>
+</head>
+<body data-page="students">
+  <main class="directory-shell">
+    <header class="directory-header">
+      <a class="brand" href="../"><span class="brand-mark">▦</span><span>Zasedák<span class="brand-dot">.</span><small>KLID VE TŘÍDĚ ZAČÍNÁ TADY</small></span></a>
+      <nav class="directory-nav" aria-label="Hlavní navigace"><a href="../">Moje třídy</a><a href="../ucebny/">Učebny</a><button type="button" id="page-sign-out">Odhlásit se</button></nav>
+    </header>
+    <section class="directory-intro"><div class="eyebrow">PŘEHLED TŘÍD</div><h1>Seznam žáků</h1><p>Přehled žáků ve všech vašich třídách.</p></section>
+    <p id="page-status" class="directory-status" role="status" aria-live="polite">Načítám seznam žáků…</p>
+    <section id="directory-content" class="directory-content" aria-label="Žáci podle tříd"></section>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
