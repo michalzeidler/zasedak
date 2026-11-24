@@ -41,6 +41,15 @@ function addDeleteButtons() {
   }
 }
 
+function showToast(message, isError = false) {
+  const toast = document.querySelector('#toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.toggle('error', isError);
+  toast.classList.add('visible');
+  window.setTimeout(() => toast.classList.remove('visible'), 3500);
+}
+
 function addAccountMenu() {
   const topbarRight = document.querySelector('.topbar-right');
   const email = document.querySelector('#user-email');
@@ -96,7 +105,7 @@ function addAccountMenu() {
   panel.id = 'user-menu-panel';
   panel.setAttribute('aria-label', 'Uživatelské menu');
   panel.hidden = true;
-  panel.innerHTML = '<button type="button" class="user-menu-action" data-open-account>Můj účet</button><a class="user-menu-link" href="./seznamy/">Seznam žáků</a><a class="user-menu-link" href="./ucebny/">Učebny</a><a class="user-menu-link" href="./admin/" data-admin-link hidden>Admin</a><span class="user-menu-separator" aria-hidden="true"></span><button type="button" class="user-menu-action user-menu-action-danger" data-sign-out>Odhlásit se</button>';
+  panel.innerHTML = '<button type="button" class="user-menu-action" data-open-account>Můj účet</button><a class="user-menu-link" href="https://michalzeidler.github.io/zasedak/">Zasedáky</a><a class="user-menu-link" href="./seznamy/">Seznam žáků</a><a class="user-menu-link" href="./ucebny/">Učebny</a><a class="user-menu-link" href="./admin/" data-admin-link hidden>Admin</a><span class="user-menu-separator" aria-hidden="true"></span><button type="button" class="user-menu-action user-menu-action-danger" data-sign-out>Odhlásit se</button>';
   wrapper.append(trigger, panel);
   topbarRight.append(wrapper);
 
@@ -166,15 +175,6 @@ function addAccountMenu() {
       submit.disabled = false;
     }
   });
-}
-
-function showToast(message, isError = false) {
-  const toast = document.querySelector('#toast');
-  if (!toast) return;
-  toast.textContent = message;
-  toast.classList.toggle('error', isError);
-  toast.classList.add('visible');
-  window.setTimeout(() => toast.classList.remove('visible'), 3500);
 }
 
 if (classList) {
