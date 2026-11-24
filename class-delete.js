@@ -59,6 +59,8 @@ function addAccountMenu() {
     .user-menu-panel[hidden]{display:none}
     .user-menu-link,.user-menu-action{display:flex;width:100%;align-items:center;padding:11px 12px;border:0;border-radius:9px;background:transparent;color:var(--ink,#202a35);font:500 14px var(--font,'DM Sans',sans-serif);text-align:left;text-decoration:none;cursor:pointer}
     .user-menu-link:hover,.user-menu-action:hover{background:#f4f7f3;color:#32624f}
+    .user-menu-action-danger{color:#a33e3e}
+    .user-menu-action-danger:hover{background:#fff4f2;color:#8e3030}
     .user-menu-separator{height:1px;margin:5px 4px;background:var(--line,#e9ebe6)}
     .account-dialog{width:min(440px,calc(100% - 32px));padding:0;border:1px solid var(--line,#e9ebe6);border-radius:18px;color:var(--ink,#202a35);box-shadow:0 20px 60px #202a3530}
     .account-dialog::backdrop{background:#202a3555;backdrop-filter:blur(2px)}
@@ -94,7 +96,7 @@ function addAccountMenu() {
   panel.id = 'user-menu-panel';
   panel.setAttribute('aria-label', 'Uživatelské menu');
   panel.hidden = true;
-  panel.innerHTML = '<button type="button" class="user-menu-action" data-open-account>Můj účet</button><a class="user-menu-link" href="#student-names">Seznam žáků</a><a class="user-menu-link" href="#class-list">Učebny</a><span class="user-menu-separator" aria-hidden="true"></span><a class="user-menu-link" href="./admin/">Admin</a>';
+  panel.innerHTML = '<button type="button" class="user-menu-action" data-open-account>Můj účet</button><a class="user-menu-link" href="#student-names">Seznam žáků</a><a class="user-menu-link" href="#class-list">Učebny</a><a class="user-menu-link" href="./admin/">Admin</a><span class="user-menu-separator" aria-hidden="true"></span><button type="button" class="user-menu-action user-menu-action-danger" data-sign-out>Odhlásit se</button>';
   wrapper.append(trigger, panel);
   topbarRight.append(wrapper);
 
@@ -121,6 +123,20 @@ function addAccountMenu() {
       dialog.showModal();
       document.querySelector('#account-password').focus();
     }
+    if (event.target.closest('[data-sign-out]')) {
+      closeMenu();
+      supabase.auth.signOut().then(({ error }) => {
+        if (error) {
+          const toast = document.querySelector('#toast');
+          if (toast) {
+            toast.textContent = error.message;
+            toast.classList.add('error', 'visible');
+          }
+          return;
+        }
+        window.location.reload();
+      });
+    }
   });
   document.addEventListener('click', event => {
     if (!wrapper.contains(event.target)) closeMenu();
@@ -136,7 +152,7 @@ function addAccountMenu() {
     if (event.target === dialog) dialog.close();
   });
   dialog.querySelector('#account-form').addEventListener('submit', async event => {
-    event.preventDefault();
+    event.preventEventDefault();
     const submit = dialog.querySelector('[type="submit"]');
     const password = dialog.querySelector('#account-password').value;
     submit.disabled = true;
