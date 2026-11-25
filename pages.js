@@ -25,7 +25,7 @@ async function init() {
     window.location.replace('../');
     return;
   }
-  $('#user-email').textContent = sessionData.session.user.email || '';
+  if ($('#user-email')) $('#user-email').textContent = sessionData.session.user.email || '';
   addAccountMenu(supabase);
 
   if (page === 'students') {
@@ -54,7 +54,14 @@ async function init() {
             button.setAttribute('aria-pressed', String(selected));
           });
           detail.hidden = false;
-          detail.innerHTML = `<div class="student-table-heading"><div><div class="eyebrow">SEZNAM TŘÍDY</div><h2>${escapeHtml(room.name)}</h2></div><button type="button" class="student-table-back">Zpět na třídy</button></div>${room.students.length ? `<div class="student-table-scroll"><table class="student-rules-table"><thead><tr><th scope="col">Jméno žáka</th><th scope="col">Pravidla</th></tr></thead><tbody>${room.students.map(student => `<tr><th scope="row">${escapeHtml(student.name)}</th><td><span class="student-rule-space" aria-label="Prázdné pole"></span></td></tr>`).join('')}</tbody></table></div>` : '<div class="directory-empty">V této třídě zatím nejsou žádní žáci.</div>'}`;
+          detail.innerHTML = `<div class="student-table-heading"><div><div class="eyebrow">SEZNAM TŘÍDY</div><h2>${escapeHtml(room.name)}</h2></div><button type="button" class="student-table-back">Zpět na třídy</button></div>${room.students.length ? `<div class="student-table-scroll"><table class="student-rules-table"><thead><tr><th scope="col">Jméno žáka</th><th scope="col">Nemá sedět s</th></tr></thead><tbody>${room.students.map(student => {
+            const storageKey = `zasedak-not-with:${room.id}:${student.id}`;
+            let selectedIds = [];
+            try { selectedIds = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (_) {}
+            const selectedNames = room.students.filter(other => selectedIds.includes(other.id)).map(other => other.name);
+            return `<tr><th scope="row">${escapeHtml(student.name)}</th><td><button type="button" class="student-rule-picker" data-student-id="${escapeHtml(student.id)}" data-storage-key="${escapeHtml(storageKey)}"><span class="student-rule-value">${selectedNames.length ? escapeHtml(selectedNames.join(', ')) : 'Vybrat žáky'}</span><span class="student-rule-chevron" aria-hidden="true">⌄</span></button></td></tr>`;
+          }).join('')}</tbody></table></div><div id="student-rule-popover" class="student-rule-popover" hidden></div>` : '<div class="directory-empty">V této třídě zatím nejsou žádní žáci.</div>'}`;
+
           detail.querySelector('.student-table-back').addEventListener('click', () => {
             detail.hidden = true;
             content.querySelectorAll('.student-class-tile').forEach(button => {
@@ -62,8 +69,38 @@ async function init() {
               button.setAttribute('aria-pressed', 'false');
             });
           });
+
+          const popover = detail.querySelector('#student-rule-popover');
+          detail.querySelectorAll('.student-rule-picker').forEach(picker => {
+            picker.addEventListener('click', event => {
+              event.stopPropagation();
+              const currentStudentId = picker.dataset.studentId;
+              let selectedIds = [];
+              try { selectedIds = JSON.parse(localStorage.getItem(picker.dataset.storageKey) || '[]'); } catch (_) {}
+
+              const rect = picker.getBoundingRect();
+              popover.innerHTML = `<div class="student-rule-popover-title">Nemá sedět s</div><div class="student-rule-options">${room.students.filter(other => other.id !== currentStudentId).map(other => `<label class="student-rule-option"><input type="checkbox" value="${escapeHtml(other.id)}" ${selectedIds.includes(other.id) ? 'checked' : ''}><span>${escapeHtml(other.name)}</span></label>`).join('') || '<span class="student-rule-empty">Ve třídě není další žák.</span>'}</div><button type="button" class="student-rule-done">Hotovo</button>`;
+              popover.hidden = false;
+              popover.style.top = `${rect.bottom + window.scrollY + 8}px`;
+              popover.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 270)}px`;
+
+              popover.querySelectorAll('input').forEach(input => {
+                input.addEventListener('change', () => {
+                  const checkedIds = [...popover.querySelectorAll('input:checked')].map(item => item.value);
+                  localStorage.setItem(picker.dataset.storageKey, JSON.stringify(checkedIds));
+                  const names = room.students.filter(other => checkedIds.includes(other.id)).map(other => other.name);
+                  picker.querySelector('.student-rule-value').textContent = names.length ? names.join(', ') : 'Vybrat žáky';
+                });
+              });
+              popover.querySelector('.student-rule-done').addEventListener('click', () => { popover.hidden = true; });
+            });
+          });
           detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
+      });
+      document.addEventListener('click', event => {
+        const popover = $('#student-rule-popover');
+        if (popover && !popover.hidden && !popover.contains(event.target) && !event.target.closest('.student-rule-picker')) popover.hidden = true;
       });
     }
   } else {
