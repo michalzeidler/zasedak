@@ -38,10 +38,33 @@ async function init() {
     if (!classes.length) {
       content.innerHTML = '<div class="directory-empty">Zatím nemáte žádné učebny ani žáky. Nejdříve přidejte třídu a seznam žáků v aplikaci.</div>';
     } else {
-      content.innerHTML = classes.map(room => {
-        const students = [...(room.students || [])].sort((a, b) => a.name.localeCompare(b.name, 'cs'));
-        return `<article class="directory-card"><h2>${escapeHtml(room.name)}</h2><p class="directory-card-subtitle">${students.length} ${students.length === 1 ? 'žák' : students.length >= 2 && students.length <= 4 ? 'žáci' : 'žáků'}</p>${students.length ? `<div class="directory-student-list">${students.map(student => `<span class="directory-student">${escapeHtml(student.name)}</span>`).join('')}</div>` : '<div class="directory-empty">V této třídě zatím nejsou žádní žáci.</div>'}</article>`;
-      }).join('');
+      const sortedClasses = classes.map(room => ({
+        ...room,
+        students: [...(room.students || [])].sort((a, b) => a.name.localeCompare(b.name, 'cs'))
+      }));
+      content.innerHTML = `<div class="student-class-tiles" aria-label="Vaše třídy">${sortedClasses.map(room => `<button type="button" class="student-class-tile" data-class-id="${escapeHtml(room.id)}" aria-pressed="false"><span class="student-class-tile-icon" aria-hidden="true">▦</span><span class="student-class-tile-name">${escapeHtml(room.name)}</span><span class="student-class-tile-count">${room.students.length} ${room.students.length === 1 ? 'žák' : room.students.length >= 2 && room.students.length <= 4 ? 'žáci' : 'žáků'}</span></button>`).join('')}</div><section id="student-class-detail" class="student-class-detail" hidden aria-live="polite"></section>`;
+
+      const detail = $('#student-class-detail');
+      content.querySelectorAll('.student-class-tile').forEach(tile => {
+        tile.addEventListener('click', () => {
+          const room = sortedClasses.find(item => item.id === tile.dataset.classId);
+          content.querySelectorAll('.student-class-tile').forEach(button => {
+            const selected = button === tile;
+            button.classList.toggle('selected', selected);
+            button.setAttribute('aria-pressed', String(selected));
+          });
+          detail.hidden = false;
+          detail.innerHTML = `<div class="student-table-heading"><div><div class="eyebrow">SEZNAM TŘÍDY</div><h2>${escapeHtml(room.name)}</h2></div><button type="button" class="student-table-back">Zpět na třídy</button></div>${room.students.length ? `<div class="student-table-scroll"><table class="student-rules-table"><thead><tr><th scope="col">Jméno žáka</th><th scope="col">Pravidla</th></tr></thead><tbody>${room.students.map(student => `<tr><th scope="row">${escapeHtml(student.name)}</th><td><span class="student-rule-space" aria-label="Prázdné pole"></span></td></tr>`).join('')}</tbody></table></div>` : '<div class="directory-empty">V této třídě zatím nejsou žádní žáci.</div>'}`;
+          detail.querySelector('.student-table-back').addEventListener('click', () => {
+            detail.hidden = true;
+            content.querySelectorAll('.student-class-tile').forEach(button => {
+              button.classList.remove('selected');
+              button.setAttribute('aria-pressed', 'false');
+            });
+          });
+          detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
     }
   } else {
     const { data, error } = await supabase
