@@ -21,16 +21,43 @@ create table if not exists public.students (
 
 create table if not exists public.student_seating_exclusions (
   class_id uuid not null references public.classes(id) on delete cascade,
-  student_id uuid not null,
-  excluded_student_id uuid not null,
+  student_id uuid not null references public.students(id) on delete cascade,
+  excluded_student_id uuid not null references public.students(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (class_id, student_id, excluded_student_id),
-  constraint student_seating_exclusions_not_self check (student_id <> excluded_student_id),
-  constraint student_seating_exclusions_student_same_class_fk
-    foreign key (student_id, class_id) references public.students(id, class_id) on delete cascade,
-  constraint student_seating_exclusions_excluded_same_class_fk
-    foreign key (excluded_student_id, class_id) references public.students(id, class_id) on delete cascade
+  constraint student_seating_exclusions_not_self check (student_id <> excluded_student_id)
 );
+
+create or replace function public.validate_student_seating_exclusion_class()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  student_class_id uuid;
+  excluded_class_id uuid;
+begin
+  select class_id into student_class_id
+    from public.students where id = new.student_id;
+  select class_id into excluded_class_id
+    from public.students where id = new.excluded_student_id;
+
+  if student_class_id is null or excluded_class_id is null
+     or student_class_id <> new.class_id
+     or excluded_class_id <> new.class_id then
+    raise exception 'Both students must belong to the selected class.'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists validate_student_seating_exclusion_class
+  on public.student_seating_exclusions;
+create trigger validate_student_seating_exclusion_class
+  before insert or update on public.student_seating_exclusions
+  for each row execute function public.validate_student_seating_exclusion_class();
 
 alter table public.classes enable row level security;
 alter table public.students enable row level security;
