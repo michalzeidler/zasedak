@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { addAccountMenu } from './account-menu.js';
 
 const supabase = createClient(
   'https://jukkbhcgriohapmlmdfo.supabase.co',
@@ -17,12 +18,6 @@ function showError(message) {
   status.classList.add('error');
 }
 
-$('#page-sign-out').addEventListener('click', async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) showError(error.message);
-  else window.location.href = '../';
-});
-
 async function init() {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw sessionError;
@@ -30,6 +25,8 @@ async function init() {
     window.location.replace('../');
     return;
   }
+  $('#user-email').textContent = sessionData.session.user.email || '';
+  addAccountMenu(supabase);
 
   if (page === 'students') {
     const { data, error } = await supabase
