@@ -17,6 +17,16 @@ function showError(message) {
   status.textContent = message;
   status.classList.add('error');
 }
+function readRuleSelection(storageKey, eligibleStudents, currentStudentId) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    if (!Array.isArray(stored)) return [];
+    const eligibleIds = new Set(eligibleStudents.map(student => String(student.id)));
+    return stored.map(String).filter(id => id !== String(currentStudentId) && eligibleIds.has(id));
+  } catch (_) {
+    return [];
+  }
+}
 
 async function init() {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -47,20 +57,22 @@ async function init() {
       const detail = $('#student-class-detail');
       content.querySelectorAll('.student-class-tile').forEach(tile => {
         tile.addEventListener('click', () => {
-          const room = sortedClasses.find(item => item.id === tile.dataset.classId);
+          const room = sortedClasses.find(item => String(item.id) === tile.dataset.classId);
+          if (!room) return;
           content.querySelectorAll('.student-class-tile').forEach(button => {
             const selected = button === tile;
             button.classList.toggle('selected', selected);
             button.setAttribute('aria-pressed', String(selected));
           });
+
           detail.hidden = false;
           detail.innerHTML = `<div class="student-table-heading"><div><div class="eyebrow">SEZNAM TŘÍDY</div><h2>${escapeHtml(room.name)}</h2></div><button type="button" class="student-table-back">Zpět na třídy</button></div>${room.students.length ? `<div class="student-table-scroll"><table class="student-rules-table"><thead><tr><th scope="col">Jméno žáka</th><th scope="col">Nemá sedět s</th></tr></thead><tbody>${room.students.map(student => {
             const storageKey = `zasedak-not-with:${room.id}:${student.id}`;
-            let selectedIds = [];
-            try { selectedIds = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (_) {}
-            const selectedNames = room.students.filter(other => selectedIds.includes(other.id)).map(other => other.name);
-            return `<tr><th scope="row">${escapeHtml(student.name)}</th><td><button type="button" class="student-rule-picker" data-student-id="${escapeHtml(student.id)}" data-storage-key="${escapeHtml(storageKey)}"><span class="student-rule-value">${selectedNames.length ? escapeHtml(selectedNames.join(', ')) : 'Vybrat žáky'}</span><span class="student-rule-chevron" aria-hidden="true">⌄</span></button></td></tr>`;
-          }).join('')}</tbody></table></div><div id="student-rule-popover" class="student-rule-popover" hidden></div>` : '<div class="directory-empty">V této třídě zatím nejsou žádní žáci.</div>'}`;
+            const eligibleStudents = room.students.filter(other => String(other.id) !== String(student.id));
+            const selectedIds = readRuleSelection(storageKey, eligibleStudents, student.id);
+            const selectedNames = eligibleStudents.filter(other => selectedIds.includes(String(other.id))).map(other => other.name);
+            return `<tr><th scope="row">${escapeHtml(student.name)}</th><td><button type="button" class="student-rule-picker" data-student-id="${escapeHtml(student.id)}" data-storage-key="${escapeHtml(storageKey)}" aria-haspopup="true" aria-expanded="false"><span class="student-rule-value">${selectedNames.length ? escapeHtml(selectedNames.join(', ')) : 'Vybrat žáky'}</span><span class="student-rule-chevron" aria-hidden="true">⌄</span></button></td></tr>`;
+          }).join('')}</tbody></table></div><div id="student-rule-popover" class="student-rule-popover" role="group" aria-label="Vyberte žáky, se kterými nemá sedět" hidden></div>` : '<div class="directory-empty">V této třídě zatím nejsou žádní žáci.</div>'}`;
 
           detail.querySelector('.student-table-back').addEventListener('click', () => {
             detail.hidden = true;
@@ -71,36 +83,64 @@ async function init() {
           });
 
           const popover = detail.querySelector('#student-rule-popover');
+          const closePicker = () => {
+            if (popover) popover.hidden = true;
+            detail.querySelectorAll('.student-rule-picker[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+          };
+
           detail.querySelectorAll('.student-rule-picker').forEach(picker => {
             picker.addEventListener('click', event => {
               event.stopPropagation();
-              const currentStudentId = picker.dataset.studentId;
-              let selectedIds = [];
-              try { selectedIds = JSON.parse(localStorage.getItem(picker.dataset.storageKey) || '[]'); } catch (_) {}
+              const isOpenForThisPicker = !popover.hidden && picker.getAttribute('aria-expanded') === 'true';
+              closePicker();
+              if (isOpenForThisPicker) return;
 
-              const rect = picker.getBoundingRect();
-              popover.innerHTML = `<div class="student-rule-popover-title">Nemá sedět s</div><div class="student-rule-options">${room.students.filter(other => other.id !== currentStudentId).map(other => `<label class="student-rule-option"><input type="checkbox" value="${escapeHtml(other.id)}" ${selectedIds.includes(other.id) ? 'checked' : ''}><span>${escapeHtml(other.name)}</span></label>`).join('') || '<span class="student-rule-empty">Ve třídě není další žák.</span>'}</div><button type="button" class="student-rule-done">Hotovo</button>`;
+              const currentStudentId = String(picker.dataset.studentId);
+              // Only show other students loaded for this exact class; never include the student on this row.
+              const eligibleStudents = room.students.filter(other => String(other.id) !== currentStudentId);
+              const selectedIds = readRuleSelection(picker.dataset.storageKey, eligibleStudents, currentStudentId);
+              popover.innerHTML = `<div class="student-rule-popover-title">Nemá sedět s</div><div class="student-rule-options">${eligibleStudents.map(other => `<label class="student-rule-option"><input type="checkbox" value="${escapeHtml(other.id)}" ${selectedIds.includes(String(other.id)) ? 'checked' : ''}><span>${escapeHtml(other.name)}</span></label>`).join('') || '<span class="student-rule-empty">Ve třídě není další žák.</span>'}</div><button type="button" class="student-rule-done">Hotovo</button>`;
+
+              const rect = picker.getBoundingClientRect();
+              const popoverWidth = 260;
+              const left = Math.max(12, Math.min(rect.left, window.innerWidth - popoverWidth - 12));
+              popover.style.position = 'fixed';
+              popover.style.left = `${left}px`;
+              popover.style.right = 'auto';
+              popover.style.transform = 'none';
+              popover.style.top = '12px';
               popover.hidden = false;
-              popover.style.top = `${rect.bottom + window.scrollY + 8}px`;
-              popover.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 270)}px`;
+              const popoverHeight = popover.getBoundingClientRect().height;
+              const below = rect.bottom + 8;
+              const top = below + popoverHeight <= window.innerHeight - 12
+                ? below
+                : Math.max(12, rect.top - popoverHeight - 8);
+              popover.style.top = `${top}px`;
+              picker.setAttribute('aria-expanded', 'true');
 
-              popover.querySelectorAll('input').forEach(input => {
+              popover.querySelectorAll('input[type="checkbox"]').forEach(input => {
                 input.addEventListener('change', () => {
-                  const checkedIds = [...popover.querySelectorAll('input:checked')].map(item => item.value);
+                  const checkedIds = [...popover.querySelectorAll('input[type="checkbox"]:checked')]
+                    .map(checkbox => checkbox.value)
+                    .filter(id => id !== currentStudentId && eligibleStudents.some(other => String(other.id) === id));
                   localStorage.setItem(picker.dataset.storageKey, JSON.stringify(checkedIds));
-                  const names = room.students.filter(other => checkedIds.includes(other.id)).map(other => other.name);
+                  const names = eligibleStudents.filter(other => checkedIds.includes(String(other.id))).map(other => other.name);
                   picker.querySelector('.student-rule-value').textContent = names.length ? names.join(', ') : 'Vybrat žáky';
                 });
               });
-              popover.querySelector('.student-rule-done').addEventListener('click', () => { popover.hidden = true; });
+              popover.querySelector('.student-rule-done').addEventListener('click', closePicker);
             });
           });
+
           detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
       });
       document.addEventListener('click', event => {
         const popover = $('#student-rule-popover');
-        if (popover && !popover.hidden && !popover.contains(event.target) && !event.target.closest('.student-rule-picker')) popover.hidden = true;
+        if (popover && !popover.hidden && !popover.contains(event.target) && !event.target.closest('.student-rule-picker')) {
+          popover.hidden = true;
+          content.querySelectorAll('.student-rule-picker[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+        }
       });
     }
   } else {
